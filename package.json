@@ -1,26 +1,44 @@
 {
     "description": "topu-sessions",
     "main": "./toputech.js",
-  "engines" : { 
-    "npm" : ">=9.7.2",
-    "node" : ">=20.0.0"
+    "engines": {
+        "npm": ">=9.7.2",
+        "node": ">=20.0.0"
     },
     "scripts": {
-    "start": "node toputech.js"
-  },
-  "author": "Topu Tech",
-  "license": "GPL-3.0 license",
-  "dependencies": {
-    "@whiskeysockets/baileys": "npm:wileys",
-    "maher-zubair-baileys": "^6.6.5",
-    "qrcode": "^1.5.3",
-    "awesome-phonenumber": "^2.64.0",
-    "pino": "^8.1.0",
-    "phone" : "3.1.30",
-    "body-parser": "^1.20.1",
-    "pastebin-js": "^1.0.6",
-    "express": "^4.18.1",
-    "jimp": "latest",
-    "path": "^0.12.7"
-   }
+        "start": "node toputech.js"
+    },
+    "author": "Topu Tech",
+    "license": "GPL-3.0 license",
+    "dependencies": {
+        "@adiwajshing/keyed-db": "^0.2.4",
+        "@cacheable/node-cache": "^2.0.2",
+        "@hapi/boom": "^10.0.1",
+        "@whiskeysockets/baileys": "npm:wileys",
+        "@whiskeysockets/libsignal-node": "github:NaufalYupra/libsignal-node",
+        "async-mutex": "^0.5.0",
+        "awesome-phonenumber": "^2.64.0",
+        "axios": "^1.13.6",
+        "body-parser": "^1.20.1",
+        "cache-manager": "^7.2.8",
+        "chalk": "^4.1.2",
+        "cheerio": "^1.2.0",
+        "express": "^4.18.1",
+        "gradient-string": "^1.2.0",
+        "jimp": "latest",
+        "libphonenumber-js": "^1.12.38",
+        "libsignal": "github:NaufalYupra/libsignal-node",
+        "lodash": "^4.17.23",
+        "maher-zubair-baileys": "^6.6.5",
+        "mongoose": "^8.0.0",
+        "music-metadata": "^11.12.1",
+        "pastebin-js": "^1.0.6",
+        "path": "^0.12.7",
+        "phone": "3.1.30",
+        "pino": "^8.1.0",
+        "protobufjs": "^8.0.0",
+        "qrcode": "^1.5.3",
+        "uuid": "^13.0.0",
+        "ws": "^8.19.0"
+    }
 }
