@@ -3,214 +3,479 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexus pair site</title>
+  <title>Sayura Cinema Mini MD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
+    :root {
+      --neon-purple: #b94fff;
+      --neon-pink: #ff2d78;
+      --neon-blue: #00c8ff;
+      --dark-bg: #07070f;
+      --card-bg: rgba(15, 10, 30, 0.85);
+      --glass: rgba(255, 255, 255, 0.04);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
+      min-height: 100vh;
+      background: var(--dark-bg);
+      background-image:
+        url("https://files.catbox.moe/oojz9i.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       display: flex;
+      align-items: center;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background:  url("https://files.catbox.moe/oojz9i.jpg"); /* set the background image */
-      font-family: Arial, sans-serif;
+      font-family: 'Rajdhani', sans-serif;
+      overflow: hidden;
     }
 
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    /* Dark overlay on background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(7,7,20,0.85) 0%, rgba(20,5,40,0.8) 100%);
+      z-index: 0;
     }
 
-    .box {
-      width: 300px;
-      height: 320px;
-      padding: 20px;
+    /* Animated grid lines */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(185,79,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(185,79,255,0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+      animation: gridMove 8s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(40px); }
+    }
+
+    /* Floating orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.25;
+      z-index: 0;
+      animation: float 6s ease-in-out infinite;
+    }
+    .orb1 { width: 300px; height: 300px; background: var(--neon-purple); top: -100px; left: -100px; animation-delay: 0s; }
+    .orb2 { width: 200px; height: 200px; background: var(--neon-pink); bottom: -80px; right: -80px; animation-delay: 3s; }
+    .orb3 { width: 150px; height: 150px; background: var(--neon-blue); bottom: 30%; left: 10%; animation-delay: 1.5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.05); }
+    }
+
+    /* Main card */
+    .card {
       position: relative;
-      text-align: center;
-      background-image:  url("https://media-hosting.imagekit.io//169ca456b5544f32/InShot_20250128_101005267.mp4?Expires=1832656927&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=s-5DChgSnLcg29DrFnAxYyRWjgMMFktwbF0kwH6wePYqZkv33x4fQo35LwwiZiGARqTWL~KA~95mQL88bUuP6jt~I~1jteEF7Qojo4vuHdS9ultT56X~w6~V-QHn9u5qwC3QcVsEZiFhHcaQv8vCGfWKcbxsGEoh65UiS4G-TPMr8tDl2ILS-NZ6eR67n4JCW~VgLB2cdggnwBi2BjUrEHv-BwZT2tOXDkVTj2aGsOUEhdvtYSt6k1tozWpv8nxi4A66AXkUYazC84s9b0flRRnxqXRN2FRHCBzpiiad6a0pf3Ws2gOEckLb-j2vZd0Ki3UQ5WyxX4ATFyN2K6CtFA__"); /* set the background image */
-      border-radius: 10px;
-      transform: perspective(1000px) rotateY(0deg);
-      box-shadow: 0 0 20px rgba(250, 249, 249, 0.7);
-      position: relative;
+      z-index: 10;
+      width: 380px;
+      padding: 40px 36px 36px;
+      background: var(--card-bg);
+      border-radius: 24px;
+      border: 1px solid rgba(185,79,255,0.3);
+      backdrop-filter: blur(24px);
+      box-shadow:
+        0 0 0 1px rgba(185,79,255,0.1),
+        0 0 40px rgba(185,79,255,0.15),
+        0 0 80px rgba(185,79,255,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      animation: cardIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
     }
 
-    #text {
-      color: #f6f5f5;
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    .input-container input {
-      color: #f1eaea;
+    /* Glowing top border */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-purple), var(--neon-pink), transparent);
+      border-radius: 2px;
     }
 
-    .centered-text {
-      color: #e9e4e4;
-    }
-
-    .input-container {
+    /* Header */
+    .logo-wrap {
       display: flex;
-      background: rgb(10, 10, 10);
-      border-radius: 1rem;
-      background: black;
-      box-shadow: black;
-      padding: 0.3rem;
-      gap: 0.3rem;
-      max-width: 300px;
-      width: 100%;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
     }
 
-    .input-container input {
-      border-radius: 0.8rem 0 0 0.8rem;
-      background: #e8e8e8;
-      box-shadow: inset 13px 13px 10px #dcdcdc, inset -13px -13px 10px #f4f4f4;
-      width: 100%;
-      flex-basis: 75%;
-      padding: 1rem;
-      border: none;
-      border-left: 2px solid #ecf2f8;
-      color: #000000;
-      transition: all 0.2s ease-in-out;
-    }
-
-    .input-container input:focus {
-      border-left: 2px solid #ecf1f6;
-      outline: none;
-      box-shadow: inset 13px 13px 10px #f0f2f3, inset -13px -13px 10px #f4f4f4;
-    }
-
-    .input-container button {
-      flex-basis: 15%;
-      padding: 1rem;
-      background: #5935ac;
-      font-weight: 700;
-      letter-spacing: 0.3rem;
-      text-transform: uppercase;
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
       color: white;
+      box-shadow: 0 0 20px rgba(185,79,255,0.5);
+    }
+
+    .brand-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--neon-purple);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(185,79,255,0.4), transparent);
+      margin: 20px 0;
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 16px;
+      font-family: 'Orbitron', monospace;
+    }
+
+    /* Input */
+    .input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--neon-purple);
+      font-size: 14px;
+      z-index: 2;
+    }
+
+    .phone-input {
+      width: 100%;
+      padding: 15px 16px 15px 44px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(185,79,255,0.25);
+      border-radius: 14px;
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      outline: none;
+      transition: all 0.3s ease;
+      -moz-appearance: textfield;
+    }
+
+    .phone-input::-webkit-outer-spin-button,
+    .phone-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .phone-input::placeholder { color: rgba(255,255,255,0.2); font-weight: 400; }
+
+    .phone-input:focus {
+      border-color: var(--neon-purple);
+      background: rgba(185,79,255,0.07);
+      box-shadow: 0 0 0 3px rgba(185,79,255,0.15), 0 0 20px rgba(185,79,255,0.1);
+    }
+
+    /* Submit button */
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-pink) 100%);
       border: none;
-      width: 90%;
-      border-radius: 0 1rem 1rem 0;
-      transition: all 0.2s ease-in-out;
+      border-radius: 14px;
+      color: #fff;
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 24px rgba(185,79,255,0.4);
     }
 
-    .input-container button:hover {
-      background: linear-gradient(135deg, #c01736 0%, #8b17b6 100%);
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transition: left 0.5s ease;
     }
 
-    @media (max-width: 500px) {
-      .input-container {
-        flex-direction: column;
-      }
+    .submit-btn:hover::before { left: 100%; }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(185,79,255,0.6);
+    }
+    .submit-btn:active { transform: translateY(0); }
 
-      .input-container input {
-        border-radius: 0.8rem;
-      }
-
-      .input-container button {
-        padding: 0.4rem;
-        border-radius: 0.8rem;
-      }
+    /* Status / result area */
+    #status {
+      margin-top: 20px;
+      min-height: 20px;
     }
 
-    .centered-text {
+    .msg-wait {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+    }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(185,79,255,0.2);
+      border-top-color: var(--neon-purple);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .msg-error {
+      color: var(--neon-pink);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Code display */
+    .code-box {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(185,79,255,0.3);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .code-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--neon-purple);
+      font-family: 'Orbitron', monospace;
+      margin-bottom: 4px;
+    }
+
+    .code-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 4px;
+    }
+
+    .copy-btn {
+      padding: 8px 16px;
+      background: rgba(185,79,255,0.15);
+      border: 1px solid rgba(185,79,255,0.4);
+      border-radius: 10px;
+      color: var(--neon-purple);
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .copy-btn:hover {
+      background: rgba(185,79,255,0.3);
+      box-shadow: 0 0 16px rgba(185,79,255,0.3);
+    }
+
+    .copy-btn.copied {
+      background: rgba(0,200,100,0.15);
+      border-color: rgba(0,200,100,0.5);
+      color: #00e87a;
+    }
+
+    /* Footer credit */
+    .footer-credit {
+      margin-top: 24px;
       text-align: center;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.2);
+      text-transform: uppercase;
     }
 
-    @media (max-width: 500px) {
-      .box {
-        width: 90%; 
-      }
+    .footer-credit span {
+      color: rgba(185,79,255,0.6);
     }
 
-    @media (max-width: 500px) {
-      .input-container input {
-        border-radius: 0.8rem;
-        width: 80%; 
-      }
-
-      .input-container button {
-        padding: 1rem;
-        border-radius: 0.9rem;
-        width: 100%; 
-      }
+    @media (max-width: 440px) {
+      .card { width: 92vw; padding: 30px 24px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="main">
-      <div class="box" id="box">
-        <div id="text">
-          <i class="fa fa-user"></i>
-          <p>
-            <h3 class="centered-text"> SAYURA CINEMA MINI MD</h3>
-            <br>
-            <h6>Coded by sayura mihiranga.</h6>
-            <h6>Enter Your Number with Country Code.</h6>
-            <div class="input-container">
-              <input placeholder="26076935xxxx" type="number" id="number" placeholder="Enter your Phone Pumber with Cuntry Code" name="">
-              <button id="submit">Submit</button>
-            </div>
-            
-            <a id="waiting-message" class="centered-text" style="display: none;">Please wait a while</a>
-            <br>
-            <br>
-            <main id="pair"></main>
-          </p>
-        </div>
+
+  <!-- Background orbs -->
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <div class="card">
+
+    <!-- Header -->
+    <div class="logo-wrap">
+      <div class="logo-icon"><i class="fas fa-film"></i></div>
+      <div>
+        <div class="brand-title">SAYURA CINEMA</div>
+        <div class="brand-sub">Mini MD &nbsp;·&nbsp; Pair Device</div>
       </div>
     </div>
+
+    <div class="divider"></div>
+
+    <!-- Input section -->
+    <div class="section-label">Enter Phone Number</div>
+
+    <div class="input-wrap">
+      <span class="input-icon"><i class="fas fa-phone-alt"></i></span>
+      <input
+        class="phone-input"
+        id="number"
+        type="number"
+        placeholder="26076935xxxx"
+      />
+    </div>
+
+    <button class="submit-btn" id="submit">
+      <i class="fas fa-link" style="margin-right:8px;font-size:11px"></i>PAIR NOW
+    </button>
+
+    <!-- Status area -->
+    <div id="status"></div>
+
+    <div class="footer-credit">Coded by <span>Sayura Mihiranga</span></div>
+
   </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
   <script>
-    let a = document.getElementById("pair");
-    let b = document.getElementById("submit");
-    let c = document.getElementById("number");
-    let box = document.getElementById("box");
+    const statusEl = document.getElementById("status");
+    const submitBtn = document.getElementById("submit");
+    const numberInput = document.getElementById("number");
 
-    async function Copy() {
-      let text = document.getElementById("copy").innerText;
-      let obj = document.getElementById("copy");
-      await navigator.clipboard.writeText(obj.innerText.replace('CODE: ', ''));
-      obj.innerText = "COPIED";
-      obj.style = "color:orange;font-weight:bold";
-      obj.size = "5";
-      setTimeout(() => {
-        obj.innerText = text;
-        obj.style = "color:white;font-weight-bold";
-        obj.size = "5";
-      }, 500);
+    submitBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const raw = numberInput.value.replace(/[^0-9]/g, "");
+
+      if (!raw) {
+        showError('<i class="fas fa-exclamation-circle"></i> Enter your WhatsApp number with country code');
+        return;
+      }
+      if (raw.length < 11) {
+        showError('<i class="fas fa-exclamation-circle"></i> Invalid phone number — too short');
+        return;
+      }
+
+      // Format display
+      let formatted = "";
+      raw.split('').forEach((d, i) => {
+        if (i === 3 || i === 8) formatted += " " + d;
+        else formatted += d;
+      });
+      numberInput.type = "text";
+      numberInput.value = "+" + formatted;
+      numberInput.style.color = "#b94fff";
+
+      showWaiting();
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = "0.6";
+
+      try {
+        let { data } = await axios(`/code?number=${raw}`);
+        let code = data.code || "Unavailable";
+        showCode(code);
+      } catch(err) {
+        showError('<i class="fas fa-times-circle"></i> Service unavailable. Try again.');
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = "1";
+    });
+
+    function showWaiting() {
+      statusEl.innerHTML = `
+        <div class="msg-wait">
+          <div class="spinner"></div>
+          <span>Connecting to server…</span>
+        </div>`;
     }
 
-    b.addEventListener("click", async (e) => {
-      e.preventDefault();
-      if (!c.value) {
-        a.innerHTML = '<a style="color:white;font-weight:bold">Enter your WhatsApp number with Country Code</a><br><br>';
-      } else if (c.value.replace(/[^0-9]/g, "").length < 11) {
-        a.innerHTML = '<a style="color:red;font-weight:bold">Invalid Phone Number</a><br><br>';
-      } else {
-        const France_King = c.value.replace(/[^0-9]/g, "");
-        let bb = "";
-        let bbc = "";
-        const cc = France_King.split('');
-        cc.map(a => {
-          bbc += a;
-          if (bbc.length == 3) {
-            bb += " " + a;
-          } else if (bbc.length == 8) {
-            bb += " " + a;
-          } else {
-            bb += a;
-          }
-        });
-        c.type = "text";
-        c.value = "+" + bb;
-        c.style = "color:red;font-size:20px";
-        a.innerHTML = '<a style="color:white;font-weight:bold">Please Wait...</a><br><br>';
-        let { data } = await axios(`/code?number=${France_King}`);
-        let code = data.code || "Service Unavailable";
-        a.innerHTML = '<font id="copy" onclick="Copy()" style="color:red;font-weight:bold" size="5">CODE: <span style="color:white;font-weight:bold">' + code + '</span></font><br><br><br>';
-      }
-    });
+    function showError(msg) {
+      statusEl.innerHTML = `<div class="msg-error">${msg}</div>`;
+    }
+
+    function showCode(code) {
+      statusEl.innerHTML = `
+        <div class="code-box">
+          <div>
+            <div class="code-label">YOUR CODE</div>
+            <div class="code-value" id="codeVal">${code}</div>
+          </div>
+          <button class="copy-btn" id="copyBtn" onclick="copyCode()">
+            <i class="far fa-copy" style="margin-right:4px"></i>COPY
+          </button>
+        </div>`;
+    }
+
+    async function copyCode() {
+      const val = document.getElementById("codeVal").innerText;
+      const btn = document.getElementById("copyBtn");
+      try {
+        await navigator.clipboard.writeText(val);
+        btn.classList.add("copied");
+        btn.innerHTML = '<i class="fas fa-check" style="margin-right:4px"></i>COPIED';
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = '<i class="far fa-copy" style="margin-right:4px"></i>COPY';
+        }, 2000);
+      } catch(e) {}
+    }
   </script>
 </body>
 </html>
