@@ -1,6 +1,6 @@
-const { makeid } = require('./id');
-const express = require('express');
-const fs = require('fs');
+const { makeid } = require("./id");
+const express = require("express");
+const fs = require("fs");
 let router = express.Router();
 const pino = require("pino");
 const mongoose = require("mongoose");
@@ -9,14 +9,13 @@ const {
     useMultiFileAuthState,
     delay,
     makeCacheableSignalKeyStore,
-    Browsers
+    Browsers,
+    jidNormalizedUser
 } = require("@whiskeysockets/baileys");
 
-// ================= MongoDB Setup =================
-// උඹේ MongoDB URI එක මෙතන තියෙනවා
+// ================= MongoDB Setup (උඹේ Uploader එකේ විදිහටම) =================
 const MONGO_URI = "mongodb+srv://sayuaradark_db_user:qK3BV8XVv2JJJD5a@cluster0.w8wb15r.mongodb.net/Sayura_DB?retryWrites=true&w=majority&appName=Cluster0";
 
-// සෙෂන් දත්ත ගබඩා කරන Schema එක
 const credsSchema = new mongoose.Schema({
     sessionId: { type: String, required: true, unique: true },
     credsJson: { type: Object, required: true },
@@ -25,17 +24,18 @@ const credsSchema = new mongoose.Schema({
 
 let CredsModel;
 try {
-    // දැනටමත් Model එකක් තිබේ නම් එය ලබා ගනී
     CredsModel = mongoose.model("SayuraMDCreds");
 } catch {
-    // නැතිනම් අලුතින් සාදයි
     CredsModel = mongoose.model("SayuraMDCreds", credsSchema);
 }
 
-// MongoDB සම්බන්ධ කිරීම
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ API connected to MongoDB Successfully"))
-    .catch(err => console.error("❌ MongoDB Connection Error:", err));
+// DB කනෙක්ට් වීම
+let isConnected = false;
+async function connectDB() {
+    if (isConnected) return;
+    await mongoose.connect(MONGO_URI);
+    isConnected = true;
+}
 
 // ================= Utils =================
 function removeFile(FilePath) {
@@ -44,9 +44,10 @@ function removeFile(FilePath) {
 }
 
 // ================= API Route =================
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
+    await connectDB();
     const id = makeid();
-    const customSessionId = `SAYURA-${id}`; // පැනල් එකේ දිස්වන නම
+    const customSessionId = `SAYURA-${id}`; // Uploader එකේ වගේම ID එකක් හැදීම
     let num = req.query.number;
 
     if (!num) {
@@ -54,90 +55,83 @@ router.get('/', async (req, res) => {
     }
 
     async function FLASH_MD_PAIR_CODE() {
-        // තාවකාලිකව creds තබා ගන්නා තැන
-        const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
-        
+        const { state, saveCreds } = await useMultiFileAuthState("./temp/" + id);
+
         try {
             let Pair_Code_By_France_King = France_King({
                 auth: {
                     creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+                    keys: makeCacheableSignalKeyStore(
+                        state.keys,
+                        pino({ level: "fatal" }).child({ level: "fatal" }),
+                    ),
                 },
                 printQRInTerminal: false,
                 logger: pino({ level: "fatal" }).child({ level: "fatal" }),
-                browser: Browsers.macOS('Chrome') // Browser එක පෙන්වීම වැදගත්
+                browser: Browsers.macOS("Chrome"),
             });
 
-            // Pairing Code එක ලබා ගැනීම
             if (!Pair_Code_By_France_King.authState.creds.registered) {
                 await delay(1500);
-                num = num.replace(/[^0-9]/g, '');
+                num = num.replace(/[^0-9]/g, "");
                 const code = await Pair_Code_By_France_King.requestPairingCode(num);
-                
+
                 if (!res.headersSent) {
                     await res.send({ code });
                 }
             }
 
-            Pair_Code_By_France_King.ev.on('creds.update', saveCreds);
-            
+            Pair_Code_By_France_King.ev.on("creds.update", saveCreds);
+
             Pair_Code_By_France_King.ev.on("connection.update", async (s) => {
                 const { connection, lastDisconnect } = s;
 
                 if (connection == "open") {
-                    // Connection එක ස්ථාවර වීමට තත්පර 5ක් ලබා දීම
-                    await delay(5000); 
+                    console.log(`✅ Session Linked: ${customSessionId}`);
+                    await delay(10000); // සෙෂන් එක ස්ටේබල් වෙන්න වෙලාව දීම
 
                     const credsPath = __dirname + `/temp/${id}/creds.json`;
-                    
+
                     if (fs.existsSync(credsPath)) {
-                        const jsonContent = fs.readFileSync(credsPath, 'utf8');
+                        const jsonContent = fs.readFileSync(credsPath, "utf8");
                         const credsObj = JSON.parse(jsonContent);
 
-                        // --- 🚀 MongoDB එකට Auto-Save කිරීම ---
+                        // --- 🚀 මෙන්න මෙතනදී තමයි Uploader එකේ වගේම සේව් වෙන්නේ ---
                         try {
                             await CredsModel.findOneAndUpdate(
                                 { sessionId: customSessionId },
-                                { 
-                                    sessionId: customSessionId, 
-                                    credsJson: credsObj, 
-                                    updatedAt: new Date() 
+                                {
+                                    sessionId: customSessionId,
+                                    credsJson: credsObj,
+                                    updatedAt: new Date(),
                                 },
                                 { upsert: true, new: true }
                             );
-                            console.log(`💾 Session ${customSessionId} saved to MongoDB`);
+                            console.log(`💾 Auto-Uploaded Session: ${customSessionId}`);
                         } catch (dbErr) {
-                            console.error("❌ Database Save Error:", dbErr.message);
+                            console.error("❌ DB Save Error:", dbErr.message);
                         }
 
-                        // WhatsApp එකට යන උපදෙස් පණිවිඩය
-                        let SUCCESS_TEXT = `✅ *SAYURA-MD SESSION CONNECTED*
-
-💡 *උපදෙස්:*
-
-මෙම කෝඩ් එක භාවිතා කර ලින්ක් ඩිවයිස් (Link Device) කළ පසු, අප්ඩේට් වූ පසු විනාඩි 2ක් ඇතුළත *Sayura Cinema MINI MD* සාර්ථකව Connect වනු ඇත.
-
-*Session ID:* ${customSessionId}`;
-
-                        await Pair_Code_By_France_King.sendMessage(Pair_Code_By_France_King.user.id, { text: SUCCESS_TEXT });
+                        // WhatsApp එකට යන මැසේජ් එක
+                        try {
+                            const targetJid = jidNormalizedUser(Pair_Code_By_France_King.user.id);
+                            let SUCCESS_TEXT = `✅ *SAYURA-MD AUTO-LINK SUCCESS*\n\n💡 *උපදෙස්:* මෙම කෝඩ් එක භාවිතා කර ලින්ක් ඩිවයිස් කළ පසු, විනාඩි 2ක් ඇතුළත බොට් පණ ගැන්වෙනු ඇත.\n\n*Session ID:* ${customSessionId}`;
+                            await Pair_Code_By_France_King.sendMessage(targetJid, { text: SUCCESS_TEXT });
+                        } catch (e) { console.log("Msg error"); }
                     }
 
-                    // වැඩේ අවසන් වූ පසු තාවකාලික ෆයිල් ඉවත් කිරීම
-                    await delay(2000);
+                    await delay(5000);
                     await Pair_Code_By_France_King.ws.close();
-                    return await removeFile('./temp/' + id);
-
+                    return await removeFile("./temp/" + id);
                 } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
                     await delay(10000);
                     FLASH_MD_PAIR_CODE();
                 }
             });
         } catch (err) {
-            console.error("Internal Error:", err);
-            await removeFile('./temp/' + id);
-            if (!res.headersSent) {
-                await res.send({ code: "Service Temporarily Unavailable" });
-            }
+            console.error("Error:", err);
+            await removeFile("./temp/" + id);
+            if (!res.headersSent) res.send({ code: "Error" });
         }
     }
     return await FLASH_MD_PAIR_CODE();
