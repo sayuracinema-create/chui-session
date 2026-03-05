@@ -1,5 +1,5 @@
-const { makeid } = require("./id");
 const express = require("express");
+const path = require("path");
 const fs = require("fs");
 let router = express.Router();
 const pino = require("pino");
@@ -13,7 +13,7 @@ const {
     jidNormalizedUser
 } = require("@whiskeysockets/baileys");
 
-// ================= MongoDB Setup (උඹේ Uploader එකේ විදිහටම) =================
+// 1. MongoDB Setup
 const MONGO_URI = "mongodb+srv://sayuaradark_db_user:qK3BV8XVv2JJJD5a@cluster0.w8wb15r.mongodb.net/Sayura_DB?retryWrites=true&w=majority&appName=Cluster0";
 
 const credsSchema = new mongoose.Schema({
@@ -23,118 +23,95 @@ const credsSchema = new mongoose.Schema({
 });
 
 let CredsModel;
-try {
-    CredsModel = mongoose.model("SayuraMDCreds");
-} catch {
-    CredsModel = mongoose.model("SayuraMDCreds", credsSchema);
+try { CredsModel = mongoose.model("SayuraMDCreds"); } 
+catch { CredsModel = mongoose.model("SayuraMDCreds", credsSchema); }
+
+// 2. ID Generator
+function generateId() {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
+    for (let i = 0; i < 10; i++) { result += chars.charAt(Math.floor(Math.random() * chars.length)); }
+    return result;
 }
 
-// DB කනෙක්ට් වීම
-let isConnected = false;
-async function connectDB() {
-    if (isConnected) return;
-    await mongoose.connect(MONGO_URI);
-    isConnected = true;
-}
-
-// ================= Utils =================
-function removeFile(FilePath) {
-    if (!fs.existsSync(FilePath)) return false;
-    fs.rmSync(FilePath, { recursive: true, force: true });
-}
-
-// ================= API Route =================
+// 3. API Route
 router.get("/", async (req, res) => {
-    await connectDB();
-    const id = makeid();
-    const customSessionId = `SAYURA-${id}`; // Uploader එකේ වගේම ID එකක් හැදීම
+    if (mongoose.connection.readyState !== 1) await mongoose.connect(MONGO_URI);
+
+    const randomId = generateId();
+    const customSessionId = `SAYURA-${randomId}`; 
     let num = req.query.number;
 
-    if (!num) {
-        return res.status(400).send({ error: "Phone number is required" });
-    }
+    if (!num) return res.status(400).send({ error: "Number required" });
 
-    async function FLASH_MD_PAIR_CODE() {
-        const { state, saveCreds } = await useMultiFileAuthState("./temp/" + id);
+    // Vercel /tmp path
+    const tempPath = path.join("/tmp", randomId);
+    if (!fs.existsSync(tempPath)) fs.mkdirSync(tempPath, { recursive: true });
+
+    async function START_PAIRING() {
+        const { state, saveCreds } = await useMultiFileAuthState(tempPath);
 
         try {
-            let Pair_Code_By_France_King = France_King({
+            let sock = France_King({
                 auth: {
                     creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(
-                        state.keys,
-                        pino({ level: "fatal" }).child({ level: "fatal" }),
-                    ),
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" })),
                 },
                 printQRInTerminal: false,
-                logger: pino({ level: "fatal" }).child({ level: "fatal" }),
                 browser: Browsers.macOS("Chrome"),
+                logger: pino({ level: "fatal" })
             });
 
-            if (!Pair_Code_By_France_King.authState.creds.registered) {
+            if (!sock.authState.creds.registered) {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, "");
-                const code = await Pair_Code_By_France_King.requestPairingCode(num);
-
-                if (!res.headersSent) {
-                    await res.send({ code });
-                }
+                const code = await sock.requestPairingCode(num);
+                if (!res.headersSent) res.send({ code });
             }
 
-            Pair_Code_By_France_King.ev.on("creds.update", saveCreds);
-
-            Pair_Code_By_France_King.ev.on("connection.update", async (s) => {
-                const { connection, lastDisconnect } = s;
-
-                if (connection == "open") {
-                    console.log(`✅ Session Linked: ${customSessionId}`);
-                    await delay(10000); // සෙෂන් එක ස්ටේබල් වෙන්න වෙලාව දීම
-
-                    const credsPath = __dirname + `/temp/${id}/creds.json`;
-
-                    if (fs.existsSync(credsPath)) {
-                        const jsonContent = fs.readFileSync(credsPath, "utf8");
-                        const credsObj = JSON.parse(jsonContent);
-
-                        // --- 🚀 මෙන්න මෙතනදී තමයි Uploader එකේ වගේම සේව් වෙන්නේ ---
-                        try {
-                            await CredsModel.findOneAndUpdate(
-                                { sessionId: customSessionId },
-                                {
-                                    sessionId: customSessionId,
-                                    credsJson: credsObj,
-                                    updatedAt: new Date(),
-                                },
-                                { upsert: true, new: true }
-                            );
-                            console.log(`💾 Auto-Uploaded Session: ${customSessionId}`);
-                        } catch (dbErr) {
-                            console.error("❌ DB Save Error:", dbErr.message);
-                        }
-
-                        // WhatsApp එකට යන මැසේජ් එක
-                        try {
-                            const targetJid = jidNormalizedUser(Pair_Code_By_France_King.user.id);
-                            let SUCCESS_TEXT = `✅ *SAYURA-MD AUTO-LINK SUCCESS*\n\n💡 *උපදෙස්:* මෙම කෝඩ් එක භාවිතා කර ලින්ක් ඩිවයිස් කළ පසු, විනාඩි 2ක් ඇතුළත බොට් පණ ගැන්වෙනු ඇත.\n\n*Session ID:* ${customSessionId}`;
-                            await Pair_Code_By_France_King.sendMessage(targetJid, { text: SUCCESS_TEXT });
-                        } catch (e) { console.log("Msg error"); }
-                    }
-
-                    await delay(5000);
-                    await Pair_Code_By_France_King.ws.close();
-                    return await removeFile("./temp/" + id);
-                } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
-                    await delay(10000);
-                    FLASH_MD_PAIR_CODE();
+            // 🚀 මෙතන තමයි වැදගත්ම කෑල්ල - Creds update වෙන හැමවෙලේම DB එකට දානවා
+            sock.ev.on("creds.update", async () => {
+                await saveCreds();
+                // ලොග් වුණාම විතරක් DB එකට සම්පූර්ණ JSON එක යවනවා
+                if (state.creds && state.creds.me) {
+                    try {
+                        await CredsModel.findOneAndUpdate(
+                            { sessionId: customSessionId },
+                            { 
+                                sessionId: customSessionId, 
+                                credsJson: state.creds, // සම්පූර්ණ creds object එකම යනවා
+                                updatedAt: new Date() 
+                            },
+                            { upsert: true, new: true }
+                        );
+                        console.log(`💾 JSON Uploaded to Mongo: ${customSessionId}`);
+                    } catch (err) { console.error("DB Error:", err); }
                 }
             });
-        } catch (err) {
-            console.error("Error:", err);
-            await removeFile("./temp/" + id);
+
+            sock.ev.on("connection.update", async (update) => {
+                const { connection } = update;
+                if (connection === "open") {
+                    console.log("✅ Session Opened!");
+                    await delay(5000);
+
+                    // WhatsApp Confirmation
+                    const targetJid = jidNormalizedUser(sock.user.id);
+                    const msg = `✅ *SAYURA-MD AUTO-LINK SUCCESS*\n\n💡 *උපදෙස්:* මෙම කෝඩ් එක භාවිතා කර ලින්ක් ඩිවයිස් කළ පසු, විනාඩි 2ක් ඇතුළත බොටී පණ ගැන්වෙනු ඇත.\n\n*Session ID:* ${customSessionId}`;
+                    await sock.sendMessage(targetJid, { text: msg });
+
+                    await delay(3000);
+                    await sock.ws.close();
+                    fs.rmSync(tempPath, { recursive: true, force: true });
+                }
+            });
+
+        } catch (e) {
+            console.log("Pairing Error:", e);
             if (!res.headersSent) res.send({ code: "Error" });
         }
     }
-    return await FLASH_MD_PAIR_CODE();
+    START_PAIRING();
 });
 
 module.exports = router;
