@@ -4,7 +4,7 @@ const path = require('path');
 const bodyParser = require("body-parser");
 
 // Replit එකේදී Port එක Auto-assign කරගැනීම
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 5000;
 const __path = process.cwd();
 
 // පරණ QR එක අයින් කරලා, Pair Code එක විතරක් ගත්තා
